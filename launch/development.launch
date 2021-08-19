@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<launch>        
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find wrs2020)/rviz_conf/development.rviz"/>
+    <!-- <arg name="x" default="-2.37" />
+    <arg name="y" default="-6.14" />
+    <arg name="z" default="1.12" />
+    <node name="spawn_bottle" pkg="gazebo_ros" type="spawn_model"
+            args="-sdf -database bottle_with_marker -x $(arg x) -y $(arg y) -z $(arg z) -model bottle" /> -->
+
+  <!-- <include file="$(find hsrb_gazebo_launch)/launch/include/hsrb_gazebo_common.xml" pass_all_args="true" >
+    <arg name="map" value="$(find tmc_potential_maps)/maps/white_space/map.yaml" />
+    <arg name="world_name" value="$(find tmc_gazebo_worlds)/worlds/empty$(arg world_suffix).world"/>
+    <arg name="robot_pos" value="-x 0 -y 0 -z 0 -Y 0" />
+    <arg name="ground_truth_xyz_offset" value="0.0\ 0.0\ 0.0" />
+    <arg name="ground_truth_rpy_offset" value="0.0\ 0.0\ 0.0" />
+  </include> -->
+
+
+
+</launch>
+
+<!-- roslaunch hsrb_gazebo_launch hsrb_empty_world.launch rviz:=false -->

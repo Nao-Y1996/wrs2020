@@ -1,0 +1,44 @@
+ポスターを掴みに行くとき
+掴みに行く途中でとまった　
+Traceback (most recent call last):
+  File "/home/kubotalab-hsr/catkin_ws/src/wrs2020/scripts/PickAndPlace_test.py", line 133, in <module>
+    pick_and_place.grasp(target)
+  File "/home/kubotalab-hsr/catkin_ws/src/wrs2020/scripts/PickAndPlace_test.py", line 66, in grasp
+    hand_control("target_to_hand", setting["target_position"])
+  File "/home/kubotalab-hsr/catkin_ws/src/wrs2020/scripts/PickAndPlace_test.py", line 45, in hand_control
+    whole_body.move_end_effector_pose(goal, ref)
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/hsrb_interface/joint_group.py", line 579, in move_end_effector_pose
+    self._execute_trajectory(constrained_traj)
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/hsrb_interface/joint_group.py", line 1040, in _execute_trajectory
+    trajectory.wait_controllers(clients)
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/hsrb_interface/trajectory.py", line 502, in wait_controllers
+    raise exceptions.FollowTrajectoryError(text)
+hsrb_interface.exceptions.FollowTrajectoryError: Playing trajectory failed: /hsrb/arm_trajectory_controller(1), /hsrb/omni_base_controller(4)
+[ERROR] [1627973804.490266]: Received comm state PREEMPTING when in simple state DONE with SimpleActionClient in NS /hsrb/omni_base_controller/follow_joint_trajectory
+
+
+ボトル掴んだあと
+移動時に止まった
+Traceback (most recent call last):
+  File "/home/kubotalab-hsr/catkin_ws/src/wrs2020/scripts/PickAndPlace_test.py", line 137, in <module>
+    omni_base.go_abs(0, 0, 0, 300.0)
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/hsrb_interface/mobile_base.py", line 147, in go_abs
+    self._send_goal_pose_and_wait(goal, timeout)
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/hsrb_interface/mobile_base.py", line 201, in _send_goal_pose_and_wait
+    raise exceptions.MobileBaseError(msg)
+hsrb_interface.exceptions.MobileBaseError: Failed to reach goal ()
+
+
+掴みに行った直後にとまった
+f-PickAndPlace-grasp-hand_controll : 例外エラーの発生
+Traceback (most recent call last):
+  File "/home/kubotalab-hsr/catkin_ws/src/wrs2020/scripts/PickAndPlace_test.py", line 63, in hand_control
+    whole_body.move_end_effector_pose(goal, ref)
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/hsrb_interface/joint_group.py", line 579, in move_end_effector_pose
+    self._execute_trajectory(constrained_traj)
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/hsrb_interface/joint_group.py", line 1040, in _execute_trajectory
+    trajectory.wait_controllers(clients)
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/hsrb_interface/trajectory.py", line 502, in wait_controllers
+    raise exceptions.FollowTrajectoryError(text)
+FollowTrajectoryError: Playing trajectory failed: /hsrb/arm_trajectory_controller(1), /hsrb/omni_base_controller(4)
+[ERROR] [1628057831.457918]: Received comm state PREEMPTING when in simple state DONE with SimpleActionClient in NS /hsrb/omni_base_controller/follow_joint_trajectory

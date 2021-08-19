@@ -1,0 +1,28 @@
+ポスターを掴みに行くとき
+ポスターの横にハンドを持っていく
+whole_body.move_end_effector_pose(geometry.pose(x=-0.25, y=-0.2, z=0.1, ei=-1.57,ek=-1.57), 'ar_marker/712')
+ハンドを横から近づける
+whole_body.move_end_effector_pose(geometry.pose(z=0.08), ref_frame_id='hand_palm_link')
+摑む
+gripper.apply_force(0.2)
+ハンドを上げる
+whole_body.move_end_effector_pose(geometry.pose(x=0.08), ref_frame_id='hand_palm_link')
+下がる
+whole_body.move_end_effector_pose(geometry.pose(y=0.3), ref_frame_id='hand_palm_link')
+移動姿勢
+whole_body.move_to_go()
+
+
+ポスターを置きに行くとき
+ブックエンドの上にポスターを持っていく
+whole_body.move_end_effector_pose(geometry.pose(x=-0.2, y=-0.25, z=0.07, ei=-1.57,ek=-1.57), 'ar_marker/712')
+ハンドを下ろす
+whole_body.move_end_effector_pose(geometry.pose(x=-0.05), ref_frame_id='hand_palm_link')
+ハンドを開く
+gripper.command(1.2)
+ハンドを横に移動する
+whole_body.move_end_effector_pose(geometry.pose(z=-0.15), ref_frame_id='hand_palm_link')
+下がる
+whole_body.move_end_effector_pose(geometry.pose(y=0.3), ref_frame_id='hand_palm_link')
+移動姿勢
+whole_body.move_to_go()
