@@ -7,11 +7,13 @@ from hsrb_interface import geometry
 import json
 import os
 import numpy as np
-import tf
+import tf as TF
 import sqlite3
 import sys
 
 from rospy.timer import sleep
+from playsound import playsound
+from tf2_ros import TransformException
 
 DBNAME2 = "maker_position.db"
 
@@ -20,7 +22,14 @@ _MOVE_TIMEOUT=60.0
 # Grasp force[N]
 _GRASP_FORCE=0.2
 # Preparation for using the robot functions
-robot = hsrb_interface.Robot()
+while True:
+    try:
+        robot = hsrb_interface.Robot()
+        break
+    except (hsrb_interface.exceptions.RobotConnectionError, rospy.exceptions.ROSInitException):
+        print('起動中です')
+        rospy.sleep(1)
+
 omni_base = robot.get("omni_base")
 whole_body = robot.get("whole_body")
 gripper = robot.get("gripper")
@@ -28,7 +37,7 @@ tts = robot.get("default_tts")
 collision_world=robot.try_get("global_collision_world")
 whole_body.collision_world = collision_world
 
-listener = tf.TransformListener()
+listener = TF.TransformListener()
 
 
 # try:
@@ -66,10 +75,17 @@ class PickAndPlace():
                 # except FollowTrajectoryError:
                 #     print("f-PickAndPlace-grasp-hand_controll : 例外エラーの発生 ↓")
                 #     print('Received comm state PREEMPTING when in simple state DONE with SimpleActionClient in NS /hsrb/omni_base_controller/follow_joint_trajectory')
+                except TransformException: # Lookup would require extrapolation into the future.
+                    print('"f-PickAndPlace-grasp-hand_controll :　TransformExceptionです')
+                    
+                    pass
+                except hsrb_interface.exceptions.MotionPlanningError:
+                    print('armの起動生成ができません　goal in collision!')
                 except:
                     print("f-PickAndPlace-grasp-hand_controll : 例外エラーの発生")
                     import traceback
                     traceback.print_exc()
+                    break
 
         if target != "Poster":
             # open hand
@@ -86,7 +102,6 @@ class PickAndPlace():
             whole_body.move_to_neutral()
 
         if target == "Poster":
-            whole_body.move_to_go()
             # open hand
             gripper.command(1.2)
             # Move the hand to left of the target
@@ -124,7 +139,6 @@ class PickAndPlace():
             whole_body.move_to_neutral()
         
         if target == "Poster":
-            whole_body.move_to_go()
             # Move the hand to place position
             hand_control("tf_place", ar_marker)
             # Move the hand down on end effector coordinate
@@ -174,16 +188,32 @@ def move_to_abs(x,y,z,radius, time_out):
                 import traceback
                 traceback.print_exc()
 
-def get_marker_position(markerName):
-    num_trial = 4
-    for i in range(num_trial):
-        try:
-            (trans,rot) = listener.lookupTransform(markerName, "/map", rospy.Time(0))
-            print("マーカーを視認しました。")
-            return (markerName, trans,rot)
-            # マーカー位置を基準に位置補正
-        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-            if i < num_trial-1:
+def Get_TF_from_map(tf):
+    is_detecting = False
+    trans,rot = None, None
+    try:
+        (trans,rot) = listener.lookupTransform(tf, "/map", rospy.Time(0))
+        is_detecting = True
+    except (TF.LookupException, TF.ConnectivityException, TF.ExtrapolationException):
+        print('Failed to get TF of '+ tf )
+    except:
+        print("function : check_visibleness_marker : 例外エラーの発生")
+        import traceback
+        traceback.print_exc()
+    return (is_detecting, tf, trans,rot)
+
+def ensure_detecting_ARmarker(tf):
+    num_trial = 2
+    for i in range(num_trial+1):
+        is_detecting, tf, trans,rot = Get_TF_from_map(tf)
+        print('i --> '+str(i))
+
+        if is_detecting:
+            print('マーカーを視認しました')
+            return (trans,rot)
+        else:
+            print(1)
+            if i < num_trial:
                 print("マーカーが見えません。姿勢を変えて再度tryします。")
                 # position_now = np.array(omni_base.pose)
                 x = -1*0.1 if i%2==0 else 0.1
@@ -191,21 +221,9 @@ def get_marker_position(markerName):
                 whole_body.move_to_neutral()
                 rospy.sleep(10.0)
             else:
-                # markerName = 'stable_'+markerName
-                print("姿勢を変えてもマーカーが見えません. map基準のマーカーを利用します")
-                try:
-                    (trans,rot) = listener.lookupTransform('stable_'+markerName, "/map", rospy.Time(0))
-                    return ('stable_'+markerName, trans, rot)
-                except:
-                    print("map基準のマーカーが利用できません")
-        except:
-            print("f-get_marker_position : 例外エラーの発生")
-            import traceback
-            traceback.print_exc()
-    print("どうしてもマーカーが見えません.")
+                print("姿勢を変えてもマーカーが見えません.")
+                return (None, None)
     
-
-
 
 
 if __name__ == "__main__":
@@ -228,78 +246,111 @@ if __name__ == "__main__":
 
     # --------------------ポスターを掴みに行く--------------------
     whole_body.move_to_go()
-    move_to_abs(-1.208820077816414, 3.3593553113225045, -2.2326029218111536, radius=0.1, time_out=300)
+    # move_to_abs(-1.208820077816414, 3.3593553113225045, -2.2326029218111536, radius=0.1, time_out=300)
+    # move_to_abs(0.2, 0.0, 0.0, radius=0.1, time_out=30)
 
     # grasp
-    ar_marker, target = "ar_marker/712", "Poster"
+    ar_marker, target = "stable_ar_marker/14", "Poster"
     print("ターゲット："+target)
     whole_body.move_to_neutral()
     rospy.sleep(10.0)
-    ar_marker,trans,rot = get_marker_position(ar_marker)
-    pick_and_place.grasp(target, ar_marker)
+    trans,rot = ensure_detecting_ARmarker(ar_marker)
+    if trans!=None:
+        try:
+            pick_and_place.grasp(target, ar_marker)
+        except:
+            print("摑むのに失敗しました")
+            import traceback
+            traceback.print_exc()
+    else:
+        print('マーカーが利用できません')
+        tts.say('マーカーが見えません')
+    
     rospy.sleep(3.0)
 
-    # --------------------ポスターを置きに行く--------------------
+    # --------------------ポスターを置きに行く(レジ前)--------------------
     whole_body.move_to_go()
-    move_to_abs(1.0364684580131838, 3.7364411780851223, 0.7068780818689953, radius=0.1, time_out=300)
-    # whole_body.move_to_go()
-    # move_to_abs(0.8, 0.0, 0.0, radius=0.1, time_out=30)
+    # move_to_abs(1.0364684580131838, 3.7364411780851223, 0.7068780818689953, radius=0.1, time_out=300)
+    # move_to_abs(0.2, 0.0, 0.0, radius=0.1, time_out=30)
 
     # # place
-    ar_marker = "ar_marker/709"
-    whole_body.move_to_neutral()
+    ar_marker = "stable_ar_marker/14"
+    whole_body.move_to_go()
     rospy.sleep(10.0)
-    ar_marker, trans,rot = get_marker_position(ar_marker)
-    try:
-        pick_and_place.place(target, ar_marker)
-    except:
-        print("置くのに失敗しました")
-        import traceback
-        traceback.print_exc()
+    trans,rot = ensure_detecting_ARmarker(ar_marker)
+    if trans!=None:
+        whole_body.move_to_joint_positions({'arm_lift_joint': 0.3})
+        try:
+            pick_and_place.place(target, ar_marker)
+        except:
+            print("置くのに失敗しました")
+            import traceback
+            traceback.print_exc()
+    else:
+        print('マーカーが利用できません')
+        tts.say('マーカーが見えません')
 
     # --------------------商品を掴みに行く--------------------
     whole_body.move_to_go()
-    move_to_abs(-0.6026532252761044, 0.3327925179753355, 3.0990727019566204, radius=0.1, time_out=300)
+    # move_to_abs(-0.6026532252761044, 0.3327925179753355, 3.0990727019566204, radius=0.1, time_out=300)
+    # move_to_abs(0.2, 0.0, 0.0, radius=0.1, time_out=30)
 
     # grasp
-    ar_marker, target = "ar_marker/711", "Bottle"
+    ar_marker, target = "stable_ar_marker/14", "Bottle"
     print("ターゲット："+target)
     whole_body.move_to_neutral()
     rospy.sleep(10.0)
-    ar_marker, trans,rot = get_marker_position(ar_marker)
-    pick_and_place.grasp(target, ar_marker)
+    trans,rot = ensure_detecting_ARmarker(ar_marker)
+    if trans!=None:
+        try:
+            pick_and_place.grasp(target, ar_marker)
+        except:
+            print("摑むのに失敗しました")
+            import traceback
+            traceback.print_exc()
+    else:
+        print('マーカーが利用できません')
+        tts.say('マーカーが見えません')
     rospy.sleep(3.0)
 
 
-    # --------------------商品を置きに行く--------------------
+    # --------------------商品を置きに行く(レジ前)--------------------
     whole_body.move_to_go()
-    move_to_abs(1.0364684580131838, 3.7364411780851223, 0.7068780818689953, radius=0.1, time_out=30)
-    whole_body.move_to_go()
-    # move_to_abs(0.8, 0.0, 0.0, radius=0.1, time_out=30)
-
+    # move_to_abs(1.0364684580131838, 3.7364411780851223, 0.7068780818689953, radius=0.1, time_out=30)
+    # move_to_abs(0.2, 0.0, 0.0, radius=0.1, time_out=30)
+    
     # # place
-    ar_marker = "ar_marker/708" # where to place (select teble)
+    ar_marker = "stable_ar_marker/14" # where to place (select teble)
     whole_body.move_to_neutral()
     rospy.sleep(10.0)
-    ar_marker, trans,rot = get_marker_position(ar_marker)
-    try:
-        pick_and_place.place(target, ar_marker)
-    except:
-        print("置くのに失敗しました")
-        import traceback
-        traceback.print_exc()
+    trans,rot = ensure_detecting_ARmarker(ar_marker)
+    if trans!=None:
+        whole_body.move_to_joint_positions({'arm_lift_joint': 0.3})
+        try:
+            pick_and_place.place(target, ar_marker)
+        except:
+            print("置くのに失敗しました")
+            import traceback
+            traceback.print_exc()
+    else:
+        print('マーカーが利用できません')
+        tts.say('マーカーが見えません')
 
-
+    # -------------------------待機-------------------------
     whole_body.move_to_go()
-    move_to_abs(0.0, 0.0, 0.0, radius=0.1, time_out=30)
+    # move_to_abs(2.8143008155844016, 1.8117163633784512, 2.7913842123373542, radius=0.1, time_out=30)
     whole_body.move_to_go()
 
-# 目的地から０．２ｍ以内であれば到着したことにして次のステップへ
+    rospy.sleep(10.0)
+    whole_body.move_to_neutral()
+    # 人を見るような姿勢を作る
+    playsound("/home/kubotalab-hsr/catkin_ws/src/wrs2020/scripts/WRS2020.mp3")
+
+
 
 # 次のステップへの遷移にかんして：　「到着」のほかに「AR見えたら」も追加
 
 # AR見えたら、AR基準で位置を修正する
-
 
     """
     移動
@@ -308,16 +359,15 @@ if __name__ == "__main__":
     ARマーカーに対して前方にいれば到着判定
     
 
-    ARマーカーが見えるかどうか確認する
+
+    stale_ARマーカーが見えるかどうか確認する
     ・見えないとき
         位置を調整する
-    ・見えるとき
-        ロボットの位置にTF1を生成
-        TF1を参照にして対象のTFを固定してTF_targetを生成して固定
-        
-    掴み方
-    対象の手前にグリッパーを持ってくる
-    対象の位置にグリッパーを持ってくる
+    ・それでも見えないときはしょうがない
+
+    stale_ARマーカーに対して把持を行う
+    （高い時はアームを上げてから行う）
+    
 
     """
 

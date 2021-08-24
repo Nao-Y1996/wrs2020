@@ -43,7 +43,7 @@ rate = rospy.Rate(10)
 
 if __name__ == "__main__":
 
-    markerNames = ['ar_marker/708']
+    markerNames = ['ar_marker/14']
     tfs_length = 5
 
     markers_translations = np.array([[[0.0]*3] * tfs_length] * len(markerNames))
