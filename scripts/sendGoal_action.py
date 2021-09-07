@@ -26,7 +26,6 @@ whole_body.collision_world = collision_world
 
 listener = tf.TransformListener()
 
-
 def move_to_abs(x,y,z,radius, time_out):
     goal_position = np.array([x,y])
     sub_positions = goal_position + [[radius,radius],[-radius,radius],[radius,-radius],[-radius,-radius]]
@@ -97,69 +96,56 @@ def get_marker_position(markerName):
 
 if __name__ == "__main__":
 
+    dir = os.path.dirname(__file__)
+    f = open(dir + "/position_params.json", "r")
+    positions = json.load(f)
+
     whole_body.move_to_go()
     # playsound("/home/kubotalab-hsr/catkin_ws/src/wrs2020/scripts/WRS2020.mp3")
 
     # 初期位置
+    whole_body.move_to_go()
+    move_to_abs(positions['initial'][0], positions['initial'][1], positions['initial'][2], radius=0.1, time_out=30)
     whole_body.move_to_neutral()
-    # move_to_abs(0.07865259055059612, -0.5795284561852135, 0.04843300419215437, radius=0.1, time_out=30)
+    rospy.sleep(20.0)
 
     # # --------------------ポスターを掴みに行く--------------------
     whole_body.move_to_go()
-    move_to_abs(-1.208820077816414, 3.3593553113225045, -2.2326029218111536, radius=0.1, time_out=30)
-    # ar_marker, target = "ar_marker/708", "Poster"
-    # print("ターゲット："+target)
+    move_to_abs(positions['grasp_poster'][0], positions['grasp_poster'][1], positions['grasp_poster'][2], radius=0.1, time_out=300)
     whole_body.move_to_neutral()
-    # rospy.sleep(10.0)
-    # ar_marker,trans,rot = get_marker_position(ar_marker)
-
+    rospy.sleep(20.0)
 
     # # --------------------ポスターを置きに行く--------------------
-    # ar_marker = "ar_marker/709"
-    whole_body.move_to_neutral()
-    # rospy.sleep(10.0)
-    # ar_marker, trans,rot = get_marker_position(ar_marker)
     whole_body.move_to_go()
-    move_to_abs(1.960140937495598, 1.8912235350707476, -1.2097353363898349, radius=0.1, time_out=30)
-    # whole_body.move_to_go()
-    # move_to_abs(0.8, 0.0, 0.0, radius=0.1, time_out=30)
+    move_to_abs(positions['place_poster'][0], positions['place_poster'][1], positions['place_poster'][2], radius=0.1, time_out=300)
+    whole_body.move_to_neutral()
+    rospy.sleep(20.0)
 
 
 
     # # --------------------商品を掴みに行く--------------------
     whole_body.move_to_go()
-    move_to_abs(-0.4026532252761044, 0.3327925179753355, 3.0990727019566204, radius=0.1, time_out=30)
-    # ar_marker, target = "ar_marker/710", "Bottle"
-    # print("ターゲット："+target)
-    # whole_body.move_to_neutral()
-    # rospy.sleep(10.0)
-    # ar_marker, trans,rot = get_marker_position(ar_marker)
+    move_to_abs(positions['grasp_bottle'][0], positions['grasp_bottle'][1], positions['grasp_bottle'][2], radius=0.1, time_out=300)
+    whole_body.move_to_neutral()
+    rospy.sleep(20.0)
 
 
     # # --------------------商品を置きに行く--------------------
-
-    move_to_abs(1.960140937495598, 1.8912235350707476, -1.2097353363898349, radius=0.1, time_out=30)
     whole_body.move_to_go()
-    # ar_marker = "ar_marker/711" # where to place (select teble)
-    # whole_body.move_to_neutral()
-    # rospy.sleep(10.0)
-    # ar_marker, trans,rot = get_marker_position(ar_marker)
+    move_to_abs(positions['place_bottle'][0], positions['place_bottle'][1], positions['place_bottle'][2], radius=0.1, time_out=300)
+    whole_body.move_to_neutral()
+    rospy.sleep(20.0)
     
 
     # 待機
-    move_to_abs(2.8143008155844016, 1.8117163633784512, 2.7913842123373542, radius=0.1, time_out=30)
     whole_body.move_to_go()
+    move_to_abs(positions['initial'][0], positions['initial'][1], positions['initial'][2], radius=0.1, time_out=30)
+    whole_body.move_to_neutral()
 
-
-    # whole_body.move_to_go()
-    # move_to_abs(0.0, 0.0, 0.0, radius=0.1, time_out=30)
-    # whole_body.move_to_go()
-
-# 目的地から０．２ｍ以内であれば到着したことにして次のステップへ
-
-# 次のステップへの遷移にかんして：　「到着」のほかに「AR見えたら」も追加
-
-# AR見えたら、AR基準で位置を修正する
+    rospy.sleep(10.0)
+    whole_body.move_to_go()
+    # 人を見るような姿勢を作る
+    # playsound("/home/kubotalab-hsr/catkin_ws/src/wrs2020/scripts/WRS2020.mp3")
 
 
     """

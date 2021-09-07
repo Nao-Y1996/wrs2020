@@ -12,7 +12,7 @@ br = TF.TransformBroadcaster()
 rate = rospy.Rate(10)
 
     
-TFs = ['ar_marker/709','ar_marker/710','ar_marker/711','ar_marker/712'] # all TF that you want to memorize
+TFs = ['ar_marker/709','ar_marker/710','ar_marker/711','ar_marker/712','ar_marker/14'] # all TF that you want to memorize
 
 memorized_tf_translations = np.array([[0.0]*3] * len(TFs))
 memorized_tf_rotations = np.array([[0.0]*4] * len(TFs))

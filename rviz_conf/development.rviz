@@ -326,8 +326,6 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        ar_marker/14:
-          Value: true
         arm_flex_link:
           Value: false
         arm_lift_link:
@@ -500,8 +498,6 @@ Visualization Manager:
                           {}
                       head_l_stereo_camera_link:
                         head_l_stereo_camera_frame:
-                          ar_marker/14:
-                            {}
                           head_rgbd_sensor_rgb_frame:
                             {}
                         head_l_stereo_camera_gazebo_frame:
@@ -538,6 +534,7 @@ Visualization Manager:
         Grid: true
         Map: true
         MarkerArray: true
+        Path: true
         PointCloud2: true
         RobotModel: true
         TF: true
@@ -558,8 +555,6 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        ar_marker/14:
-          Value: true
         arm_flex_link:
           Value: false
         arm_lift_link:
@@ -732,8 +727,6 @@ Visualization Manager:
                           {}
                       head_l_stereo_camera_link:
                         head_l_stereo_camera_frame:
-                          ar_marker/14:
-                            {}
                           head_rgbd_sensor_rgb_frame:
                             {}
                         head_l_stereo_camera_gazebo_frame:
@@ -747,6 +740,29 @@ Visualization Manager:
             base_footprint_wheel:
               {}
       Update Interval: 0
+      Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 25; 255; 0
+      Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.029999999329447746
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic: ""
+      Unreliable: false
       Value: true
   Enabled: true
   Global Options:

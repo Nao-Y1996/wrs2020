@@ -11,7 +11,7 @@ import tf
 import csv
 import sqlite3
 import numpy as np
-
+import random
 from rospy.timer import sleep
 
 DBNAME = 'HSRstate.db'
@@ -35,31 +35,33 @@ whole_body.collision_world = collision_world
 
 def move_to_abs(x,y,z,radius, time_out):
     goal_position = np.array([x,y])
-    sub_positions = goal_position + [[radius,radius],[-radius,radius],[radius,-radius],[-radius,-radius]]
-    i = 0
-    while True:
-        # omni_base.go_rel(0, 0, z, 15) # ゴール方向に体を向ける
-        try:
-            print('f:move_to : 移動します')
-            omni_base.go_abs(x, y, z, time_out)
-            print('f:move_to : 成功')
-            whole_body.move_to_neutral()
-            break
-        except hsrb_interface.exceptions.MobileBaseError: #  Failed to reach goal ()
-            position_now = np.array(omni_base.pose[0:2])
-            if np.linalg.norm(goal_position-position_now)<=radius: # ゴールから半径radius内にいれば移動成功とする
-                print('f:move_to : 半径内で成功')
-                whole_body.move_to_neutral()
-                break
-            # -------------移動失敗のとき--------------
-            # radiusを半径とする円の外接四角形の四隅への移動を順番に試みる
-            try:
-                print('f:move_to : 失敗　予備位置へ移動して再度tryします  -->  予備位置ナンバー = ',i)
-                omni_base.go_abs(sub_positions[i][0], sub_positions[i][1], z, 10.0)
-            except:
-                i += 1
-                if i==4:
-                    i=0
+    is_success = False
+    # omni_base.go_rel(0, 0, z, 15) # ゴール方向に体を向ける
+    try:
+        print("move_to_abs : moving")
+        omni_base.go_abs(x, y, z, time_out)
+        whole_body.move_to_go()
+        is_success = True
+        print("move_to_abs : succsess")
+    except hsrb_interface.exceptions.MobileBaseError: #  Failed to reach goal ()
+        position_now = np.array(omni_base.pose[0:2])
+        if np.linalg.norm(goal_position-position_now)<=radius: # ゴールから半径radius内にいれば移動成功とする
+            whole_body.move_to_go()
+            is_success = True
+            print("move_to_abs : succsess in radius")
+        # -------------移動失敗のとき--------------
+        else:
+            x = position_now[0] + random.uniform(0.1, 0.3)
+            y = position_now[1] + random.uniform(0.1, 0.3)
+            is_success = False
+    # -------------移動失敗のとき--------------
+    except:
+        position_now = np.array(omni_base.pose[0:2])
+        x = position_now[0] + random.uniform(0.1, 0.3)
+        y = position_now[1] + random.uniform(0.1, 0.3)
+        is_success = False
+
+    return is_success
 
 if __name__ == "__main__":
 
