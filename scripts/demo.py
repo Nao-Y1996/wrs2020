@@ -15,7 +15,7 @@ from rospy.timer import sleep
 from playsound import playsound
 from tf2_ros import TransformException
 
-DBNAME2 = "maker_position.db"
+_DB_MOVE_STATE = "move_state.db"
 
 # Move timeout[s]
 _MOVE_TIMEOUT=60.0
@@ -40,22 +40,6 @@ whole_body.collision_world = collision_world
 listener = TF.TransformListener()
 
 
-# try:
-#     os.remove(DBNAME2)
-# except:
-#     pass
-# conn = sqlite3.connect(DBNAME2)
-# try:
-#     cur = conn.cursor()
-#     cur.execute("CREATE TABLE maker_position(maker_name TEXT PRIMARY KEY, x REAL, y REAL, z REAL)")
-#     cur.close()
-#     conn.commit()
-# except sqlite3.OperationalError:
-#     import traceback
-#     traceback.print_exc()
-#     sys.exit("maker_positionテーブルの初期化に失敗しました") 
-# conn.close()
-
 class PickAndPlace():
     def __init__(self, conf):
         self.conf = conf
@@ -77,10 +61,14 @@ class PickAndPlace():
                 #     print('Received comm state PREEMPTING when in simple state DONE with SimpleActionClient in NS /hsrb/omni_base_controller/follow_joint_trajectory')
                 except TransformException: # Lookup would require extrapolation into the future.
                     print('"f-PickAndPlace-grasp-hand_controll :　TransformExceptionです')
-                    
+                    import traceback
+                    traceback.print_exc()
                     pass
                 except hsrb_interface.exceptions.MotionPlanningError:
                     print('armの起動生成ができません　goal in collision!')
+                    import traceback
+                    traceback.print_exc()
+                    break
                 except:
                     print("f-PickAndPlace-grasp-hand_controll : 例外エラーの発生")
                     import traceback
@@ -123,7 +111,30 @@ class PickAndPlace():
         def hand_control(key, ref):
             x, y, z, ei, ej, ek = setting[key]
             goal = geometry.pose(x, y, z, ei, ej, ek)
-            whole_body.move_end_effector_pose(goal, ref)
+            while True:
+                try:
+                    now = rospy.Time.now()
+                    listener.waitForTransform("/map", ref, now, rospy.Duration(3.0))
+                    whole_body.move_end_effector_pose(goal, ref)
+                    break
+                # except FollowTrajectoryError:
+                #     print("f-PickAndPlace-grasp-hand_controll : 例外エラーの発生 ↓")
+                #     print('Received comm state PREEMPTING when in simple state DONE with SimpleActionClient in NS /hsrb/omni_base_controller/follow_joint_trajectory')
+                except TransformException: # Lookup would require extrapolation into the future.
+                    print('"f-PickAndPlace-grasp-hand_controll :　TransformExceptionです')
+                    import traceback
+                    traceback.print_exc()
+                    pass
+                except hsrb_interface.exceptions.MotionPlanningError:
+                    print('armの起動生成ができません　goal in collision!')
+                    import traceback
+                    traceback.print_exc()
+                    break
+                except:
+                    print("f-PickAndPlace-grasp-hand_controll : 例外エラーの発生")
+                    import traceback
+                    traceback.print_exc()
+                    break
 
         if target != "Poster":
             # Move the hand to place position
@@ -176,7 +187,7 @@ def move_to_abs(x,y,z,radius, time_out):
             try:
                 print("move_to_abs : failed \n Moving to sub_position and trying again  -->  sub position No."+str(i))
                 print("sub position : ", sub_positions[i][0], sub_positions[i][1], z)
-                omni_base.go_abs(sub_positions[i][0], sub_positions[i][1], z, 15.0)
+                omni_base.go_abs(sub_positions[i][0], sub_positions[i][1], z, 5.0)
             except:
                 print('failed : Moving to sub_position')
                 pass
@@ -225,9 +236,27 @@ def ensure_detecting_ARmarker(tf):
                 print("姿勢を変えてもマーカーが見えません.")
                 return (None, None)
     
+# DBの初期化
+# try:
+#     os.remove(_DB_MOVE_STATE)
+# except:
+#     pass
+# conn = sqlite3.connect(_DB_MOVE_STATE)
+# try:
+#     cur = conn.cursor()
+#     cur.execute("CREATE TABLE move_state(maker_name TEXT PRIMARY KEY, x REAL, y REAL, z REAL)")
+#     cur.close()
+#     conn.commit()
+# except sqlite3.OperationalError:
+#     import traceback
+#     traceback.print_exc()
+#     sys.exit(_DB_MOVE_STATE, "の初期化に失敗しました") 
+# conn.close()
+
 
 
 if __name__ == "__main__":
+
 
     # read json
     dir = os.path.dirname(__file__)
@@ -241,21 +270,24 @@ if __name__ == "__main__":
     pick_and_place = PickAndPlace(grasp_conf)
 
 
+    # move_to_abs(positions['initial'][0], positions['initial'][1], positions['initial'][2], radius=0.1, time_out=300)
+
+
     # --------------------ポスターを掴みに行く--------------------
     whole_body.move_to_go()
-    move_to_abs(0.0, 0.0, 0.0, radius=0.1, time_out=30)
-    move_to_abs(positions['grasp_poster'][0], positions['grasp_poster'][1], positions['grasp_poster'][2], radius=0.1, time_out=300)
+    # move_to_abs(0.0, 0.0, 0.0, radius=0.1, time_out=30)
+    move_to_abs(positions['grasp_poster'][0], positions['grasp_poster'][1], positions['grasp_poster'][2], radius=0.1, time_out=60)
 
 
     # grasp
     whole_body.move_to_go()
     rospy.sleep(10.0)
-    ar_marker, target = "memorized_ar_marker/14", "Poster"
+    ar_marker, target = "memorized_ar_marker/709", "Poster"
     print("ターゲット："+target)
     trans,rot = ensure_detecting_ARmarker(ar_marker)
 
-    print("場所を修正します")
-    move_to_abs(trans[0]-0.9, trans[1]+0.4, 0.0, radius=0.1, time_out=30)
+    # print("場所を修正します")
+    # move_to_abs(trans[0]-0.9, trans[1]+0.4, 0.0, radius=0.1, time_out=30)
     whole_body.move_to_go()
     
     height = trans[2]
@@ -278,18 +310,18 @@ if __name__ == "__main__":
 
     # --------------------ポスターを置きに行く(レジ前)--------------------
     whole_body.move_to_go()
-    move_to_abs(0.0, 0.0, 0.0, radius=0.1, time_out=30)
-    move_to_abs(positions['place_poster'][0], positions['place_poster'][1], positions['place_poster'][2], radius=0.1, time_out=300)
+    # move_to_abs(0.0, 0.0, 0.0, radius=0.1, time_out=30)
+    move_to_abs(positions['place_poster'][0], positions['place_poster'][1], positions['place_poster'][2], radius=0.1, time_out=60)
 
 
     # # place
     whole_body.move_to_go()
     rospy.sleep(10.0)
-    ar_marker = "memorized_ar_marker/14"
+    ar_marker = "memorized_ar_marker/710"
     trans,rot = ensure_detecting_ARmarker(ar_marker)
 
-    print("場所を修正します")
-    move_to_abs(trans[0]-0.9, trans[1]+0.4, 0.0, radius=0.1, time_out=30)
+    # print("場所を修正します")
+    # move_to_abs(trans[0]-0.9, trans[1]+0.4, 0.0, radius=0.1, time_out=30)
     whole_body.move_to_go()
 
     height = trans[2]
@@ -307,18 +339,18 @@ if __name__ == "__main__":
     else:
         print('マーカーが利用できません')
         tts.say('マーカーが見えません')
-    
+
 
     # --------------------商品を掴みに行く--------------------
     whole_body.move_to_go()
-    move_to_abs(0.0, 0.0, 0.0, radius=0.1, time_out=30)
-    move_to_abs(positions['grasp_bottle'][0], positions['grasp_bottle'][1], positions['grasp_bottle'][2], radius=0.1, time_out=300)
+    # move_to_abs(1.0, 0.0, 0.0, radius=0.1, time_out=30)
+    move_to_abs(positions['grasp_bottle'][0], positions['grasp_bottle'][1], positions['grasp_bottle'][2], radius=0.1, time_out=60)
 
 
     # grasp
     whole_body.move_to_neutral()
     rospy.sleep(10.0)
-    ar_marker, target = "memorized_ar_marker/710", "Bottle"
+    ar_marker, target = "memorized_ar_marker/711", "Bottle"
     print("ターゲット："+target)
     trans,rot = ensure_detecting_ARmarker(ar_marker)
 
@@ -342,14 +374,14 @@ if __name__ == "__main__":
     
     # --------------------商品を置きに行く(レジ前)--------------------
     whole_body.move_to_go()
-    move_to_abs(0.0, 0.0, 0.0, radius=0.1, time_out=30)
-    move_to_abs(positions['place_bottle'][0], positions['place_bottle'][1], positions['place_bottle'][2], radius=0.1, time_out=300)
+    # move_to_abs(0.0, 0.0, 0.0, radius=0.1, time_out=30)
+    move_to_abs(positions['place_bottle'][0], positions['place_bottle'][1], positions['place_bottle'][2], radius=0.1, time_out=60)
 
     
     # # place
     whole_body.move_to_neutral()
     rospy.sleep(10.0)
-    ar_marker = "memorized_ar_marker/710" # where to place (select teble)
+    ar_marker = "memorized_ar_marker/711" # where to place (select teble)
     trans,rot = ensure_detecting_ARmarker(ar_marker)
 
     height = trans[2]
@@ -372,8 +404,12 @@ if __name__ == "__main__":
     
     # -------------------------待機-------------------------
     whole_body.move_to_go()
-    move_to_abs(0.0, 0.0, 0.0, radius=0.1, time_out=30)
-    # playsound("/home/kubotalab-hsr/catkin_ws/src/wrs2020/scripts/WRS2020.mp3")
+    move_to_abs(positions['initial'][0], positions['initial'][1], positions['initial'][2], radius=0.1, time_out=60)
+    gripper.command(0.0)
+    rospy.sleep(10)
+    
+    whole_body.move_to_joint_positions({'head_pan_joint': 0.2, 'head_tilt_joint': 0.3})
+    playsound("/home/kubotalab-hsr/catkin_ws/src/wrs2020/scripts/WRS2020.mp3")
     whole_body.move_to_go()
 
 

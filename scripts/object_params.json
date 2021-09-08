@@ -5,9 +5,9 @@
         "hand_up": [0.04, 0, 0,  0,0,0],
         "hand_back": [0, 0, -0.2,  0,0,0],
         "place_type": "front",
-        "tf_place": [0.0, -0.2, 0.03,  0, 0, -1.57],
+        "tf_place": [0.0, -0.2, -0.02,  0, 0, -1.57],
         "hand_down":[-0.04, 0, 0,  0,0,0],
-        "hand_up_after_place": [0.09, 0, 0,  0,0,0]
+        "hand_up_after_place": [0.03, 0, 0,  0,0,0]
     },
     "CaffeLatte": {
         "target_to_hand": [0, -0.1, 0,  0, 0, -1.57],

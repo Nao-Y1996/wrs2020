@@ -18,5 +18,4 @@
 
 
 </launch>
-
 <!-- roslaunch hsrb_gazebo_launch hsrb_empty_world.launch rviz:=false -->

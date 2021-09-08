@@ -107,45 +107,45 @@ if __name__ == "__main__":
     whole_body.move_to_go()
     move_to_abs(positions['initial'][0], positions['initial'][1], positions['initial'][2], radius=0.1, time_out=30)
     whole_body.move_to_neutral()
-    rospy.sleep(20.0)
+    rospy.sleep(3.0)
 
     # # --------------------ポスターを掴みに行く--------------------
     whole_body.move_to_go()
-    move_to_abs(positions['grasp_poster'][0], positions['grasp_poster'][1], positions['grasp_poster'][2], radius=0.1, time_out=300)
+    move_to_abs(positions['grasp_poster'][0], positions['grasp_poster'][1], positions['grasp_poster'][2], radius=0.1, time_out=60)
     whole_body.move_to_neutral()
-    rospy.sleep(20.0)
+    rospy.sleep(3.0)
 
     # # --------------------ポスターを置きに行く--------------------
     whole_body.move_to_go()
-    move_to_abs(positions['place_poster'][0], positions['place_poster'][1], positions['place_poster'][2], radius=0.1, time_out=300)
+    move_to_abs(positions['place_poster'][0], positions['place_poster'][1], positions['place_poster'][2], radius=0.1, time_out=60)
     whole_body.move_to_neutral()
-    rospy.sleep(20.0)
+    rospy.sleep(3.0)
 
 
 
     # # --------------------商品を掴みに行く--------------------
     whole_body.move_to_go()
-    move_to_abs(positions['grasp_bottle'][0], positions['grasp_bottle'][1], positions['grasp_bottle'][2], radius=0.1, time_out=300)
+    move_to_abs(positions['grasp_bottle'][0], positions['grasp_bottle'][1], positions['grasp_bottle'][2], radius=0.1, time_out=60)
     whole_body.move_to_neutral()
-    rospy.sleep(20.0)
+    rospy.sleep(3.0)
 
 
     # # --------------------商品を置きに行く--------------------
     whole_body.move_to_go()
-    move_to_abs(positions['place_bottle'][0], positions['place_bottle'][1], positions['place_bottle'][2], radius=0.1, time_out=300)
+    move_to_abs(positions['place_bottle'][0], positions['place_bottle'][1], positions['place_bottle'][2], radius=0.1, time_out=60)
     whole_body.move_to_neutral()
-    rospy.sleep(20.0)
+    rospy.sleep(3.0)
     
 
     # 待機
     whole_body.move_to_go()
-    move_to_abs(positions['initial'][0], positions['initial'][1], positions['initial'][2], radius=0.1, time_out=30)
-    whole_body.move_to_neutral()
-
-    rospy.sleep(10.0)
+    move_to_abs(positions['initial'][0], positions['initial'][1], positions['initial'][2], radius=0.1, time_out=300)
+    gripper.command(0.0)
+    rospy.sleep(10)
+    
+    whole_body.move_to_joint_positions({'head_pan_joint': 0.2, 'head_tilt_joint': 0.3})
+    playsound("/home/kubotalab-hsr/catkin_ws/src/wrs2020/scripts/WRS2020.mp3")
     whole_body.move_to_go()
-    # 人を見るような姿勢を作る
-    # playsound("/home/kubotalab-hsr/catkin_ws/src/wrs2020/scripts/WRS2020.mp3")
 
 
     """
