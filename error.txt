@@ -42,3 +42,52 @@ Traceback (most recent call last):
     raise exceptions.FollowTrajectoryError(text)
 FollowTrajectoryError: Playing trajectory failed: /hsrb/arm_trajectory_controller(1), /hsrb/omni_base_controller(4)
 [ERROR] [1628057831.457918]: Received comm state PREEMPTING when in simple state DONE with SimpleActionClient in NS /hsrb/omni_base_controller/follow_joint_trajectory
+
+
+掴みに行く直前
+f-move_to : succsess
+ターゲット：Poster
+マーカーを視認しました
+場所を修正します
+armの起動生成ができません　goal in collision!
+Traceback (most recent call last):
+  File "/home/kubotalab-hsr/catkin_ws/src/wrs2020/scripts/PickAndPlace_test.py", line 57, in hand_control
+    whole_body.move_end_effector_pose(goal, ref)
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/hsrb_interface/joint_group.py", line 575, in move_end_effector_pose
+    raise exceptions.MotionPlanningError(msg, res.error_code)
+MotionPlanningError: START_STATE_IN_COLLISION (Fail to plan move_endpoint)
+armの起動生成ができません　goal in collision!
+Traceback (most recent call last):
+  File "/home/kubotalab-hsr/catkin_ws/src/wrs2020/scripts/PickAndPlace_test.py", line 57, in hand_control
+    whole_body.move_end_effector_pose(goal, ref)
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/hsrb_interface/joint_group.py", line 575, in move_end_effector_pose
+    raise exceptions.MotionPlanningError(msg, res.error_code)
+MotionPlanningError: START_STATE_IN_COLLISION (Fail to plan move_endpoint)
+f-PickAndPlace-grasp-hand_controll : 例外エラーの発生
+Traceback (most recent call last):
+  File "/home/kubotalab-hsr/catkin_ws/src/wrs2020/scripts/PickAndPlace_test.py", line 57, in hand_control
+    whole_body.move_end_effector_pose(goal, ref)
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/hsrb_interface/joint_group.py", line 579, in move_end_effector_pose
+    self._execute_trajectory(constrained_traj)
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/hsrb_interface/joint_group.py", line 1040, in _execute_trajectory
+    trajectory.wait_controllers(clients)
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/hsrb_interface/trajectory.py", line 502, in wait_controllers
+    raise exceptions.FollowTrajectoryError(text)
+FollowTrajectoryError: Playing trajectory failed: /hsrb/arm_trajectory_controller(1), /hsrb/omni_base_controller(4)
+[ERROR] [1631244319.059504]: Received comm state PREEMPTING when in simple state DONE with SimpleActionClient in NS /hsrb/omni_base_controller/follow_joint_trajectory
+^CTraceback (most recent call last):
+  File "/home/kubotalab-hsr/catkin_ws/src/wrs2020/scripts/PickAndPlace_test.py", line 303, in <module>
+    whole_body.move_to_go()
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/hsrb_interface/joint_group.py", line 502, in move_to_go
+    self.move_to_joint_positions(goals)
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/hsrb_interface/joint_group.py", line 476, in move_to_joint_positions
+    self._change_joint_state(goal_state)
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/hsrb_interface/joint_group.py", line 414, in _change_joint_state
+    req = self._generate_planning_request(PlanWithJointGoalsRequest)
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/hsrb_interface/joint_group.py", line 940, in _generate_planning_request
+    settings.get_frame('base'))
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/hsrb_interface/joint_group.py", line 533, in _lookup_odom_to_ref
+    rospy.Duration(self._tf_timeout)
+  File "/opt/ros/melodic/lib/python2.7/dist-packages/tf2_ros/buffer.py", line 87, in lookup_transform
+    return self.lookup_transform_core(target_frame, source_frame, time)
+tf2.ExtrapolationException: Lookup would require extrapolation into the future.  Requested time 1631244325.111785889 but the latest data is at time 1631244324.469322920, when looking up transform from frame [base_footprint] to frame [odom]

@@ -34,8 +34,8 @@ omni_base = robot.get("omni_base")
 whole_body = robot.get("whole_body")
 gripper = robot.get("gripper")
 tts = robot.get("default_tts")
-collision_world=robot.try_get("global_collision_world")
-whole_body.collision_world = collision_world
+# collision_world=robot.try_get("global_collision_world")
+# whole_body.collision_world = collision_world
 
 listener = TF.TransformListener()
 
@@ -97,7 +97,7 @@ class PickAndPlace():
             # Right slide 
             hand_control("target_to_hand2", "hand_palm_link")
             # Specify the force to grasp
-            gripper.apply_force(_GRASP_FORCE)
+            gripper.apply_force(0.5)
             # Move the hand up on end effector coordinate
             hand_control("hand_up", "hand_palm_link")
             # Move the hand back on end effector coordinate
@@ -145,7 +145,7 @@ class PickAndPlace():
             gripper.command(1.2)
             # Move the hand up on end effector coordinate
             hand_control("hand_up_after_place", "hand_palm_link")
-            omni_base.go_rel(-0.5, 0.0, 0.0, 100.0)
+            omni_base.go_rel(-0.5, 0.0, 0.0, 5.0)
             # Transit to initial posture
             whole_body.move_to_go()
         
@@ -163,43 +163,31 @@ class PickAndPlace():
             # Transit to initial posture
             whole_body.move_to_go()
 
+
 def move_to_abs(x,y,z,radius, time_out):
     goal_position = np.array([x,y])
-    sub_positions = goal_position + [[radius,radius],[-radius,radius],[radius,-radius],[-radius,-radius]]
-    i = 0
     while True:
-        print(i)
-        # omni_base.go_rel(0, 0, z, 15) # ゴール方向に体を向ける
         try:
-            print("move_to_abs : moving")
+            print("f-move_to : moving to goal")
             omni_base.go_abs(x, y, z, time_out)
-            print("move_to_abs : succsess")
-            whole_body.move_to_go()
+            print("f-move_to : succsess")
+            whole_body.move_to_neutral()
             break
-        except hsrb_interface.exceptions.MobileBaseError: #  Failed to reach goal ()
+        except hsrb_interface.exceptions.MobileBaseError: #  Failed to reach goal (障害物やtime_outのとき)
             position_now = np.array(omni_base.pose[0:2])
             if np.linalg.norm(goal_position-position_now)<=radius: # ゴールから半径radius内にいれば移動成功とする
-                print("move_to_abs : succsess in radius")
-                whole_body.move_to_go()
+                print("f-move_to : succsess in radius")
+                whole_body.move_to_neutral()
                 break
-            # -------------移動失敗のとき--------------
-            # 目標地点からradiusを半径とする円の外接四角形の四隅への移動を順番に試みる
-            try:
-                print("move_to_abs : failed \n Moving to sub_position and trying again  -->  sub position No."+str(i))
-                print("sub position : ", sub_positions[i][0], sub_positions[i][1], z)
-                omni_base.go_abs(sub_positions[i][0], sub_positions[i][1], z, 5.0)
-            except:
-                print('failed : Moving to sub_position')
-                pass
-            # except:
-            #     print("f-move_to_abs : 例外エラーの発生")
-            #     import traceback
-            #     traceback.print_exc()
-            finally:
-                i += 1
-                if i==4:
-                    i=0
-            # 移動できないと無限ループになる
+            # -----------------------
+            # else:
+            #     omni_base.go_rel(x, y, z, time_out)
+            # -----------------------
+        except:
+            print("move_to_abs : Unexpected Error! Retry Demonstration !")
+            tts.say('リトライしてください')
+            import traceback
+            traceback.print_exc()
 
 def Get_TF_from_map(tf):
     is_detecting = False
@@ -210,7 +198,8 @@ def Get_TF_from_map(tf):
     except (TF.LookupException, TF.ConnectivityException, TF.ExtrapolationException):
         print('Failed to get TF of '+ tf )
     except:
-        print("function : check_visibleness_marker : 例外エラーの発生")
+        print("Get_TF_from_map :  Unexpected Error! Retry Demonstration !")
+        tts.say('リトライしてください')
         import traceback
         traceback.print_exc()
     return (is_detecting, tf, trans,rot)
@@ -234,6 +223,7 @@ def ensure_detecting_ARmarker(tf):
                 rospy.sleep(10.0)
             else:
                 print("姿勢を変えてもマーカーが見えません.")
+                tts.say('リトライしてください')
                 return (None, None)
     
 # DBの初期化
@@ -266,17 +256,15 @@ if __name__ == "__main__":
     f = open(dir + "/position_params.json", "r")
     positions = json.load(f)
 
-    whole_body.liner_weight = 70
+    whole_body.liner_weight = 80
     pick_and_place = PickAndPlace(grasp_conf)
 
 
     # move_to_abs(positions['initial'][0], positions['initial'][1], positions['initial'][2], radius=0.1, time_out=300)
-
-
     # --------------------ポスターを掴みに行く--------------------
     whole_body.move_to_go()
     # move_to_abs(0.0, 0.0, 0.0, radius=0.1, time_out=30)
-    move_to_abs(positions['grasp_poster'][0], positions['grasp_poster'][1], positions['grasp_poster'][2], radius=0.1, time_out=60)
+    move_to_abs(positions['grasp_poster'][0], positions['grasp_poster'][1], positions['grasp_poster'][2], radius=0.1, time_out=3)
 
 
     # grasp
@@ -286,8 +274,12 @@ if __name__ == "__main__":
     print("ターゲット："+target)
     trans,rot = ensure_detecting_ARmarker(ar_marker)
 
-    # print("場所を修正します")
-    # move_to_abs(trans[0]-0.9, trans[1]+0.4, 0.0, radius=0.1, time_out=30)
+    print("場所を修正します")
+    try:
+        omni_base.go_pose(geometry.pose(ei=3.14, ej=-1.57), 10.0, ref_frame_id='grasp_position')
+        print("場所を修正しました")
+    except:
+        pass
     whole_body.move_to_go()
     
     height = trans[2]
@@ -310,8 +302,7 @@ if __name__ == "__main__":
 
     # --------------------ポスターを置きに行く(レジ前)--------------------
     whole_body.move_to_go()
-    # move_to_abs(0.0, 0.0, 0.0, radius=0.1, time_out=30)
-    move_to_abs(positions['place_poster'][0], positions['place_poster'][1], positions['place_poster'][2], radius=0.1, time_out=60)
+    move_to_abs(positions['place_poster'][0], positions['place_poster'][1], positions['place_poster'][2], radius=0.1, time_out=3)
 
 
     # # place
@@ -320,8 +311,12 @@ if __name__ == "__main__":
     ar_marker = "memorized_ar_marker/710"
     trans,rot = ensure_detecting_ARmarker(ar_marker)
 
-    # print("場所を修正します")
-    # move_to_abs(trans[0]-0.9, trans[1]+0.4, 0.0, radius=0.1, time_out=30)
+    print("場所を修正します")
+    try:
+        omni_base.go_pose(geometry.pose(ei=3.14, ej=-1.57), 10.0, ref_frame_id='place_position')
+        print("場所を修正しました")
+    except:
+        pass
     whole_body.move_to_go()
 
     height = trans[2]
@@ -344,7 +339,7 @@ if __name__ == "__main__":
     # --------------------商品を掴みに行く--------------------
     whole_body.move_to_go()
     # move_to_abs(1.0, 0.0, 0.0, radius=0.1, time_out=30)
-    move_to_abs(positions['grasp_bottle'][0], positions['grasp_bottle'][1], positions['grasp_bottle'][2], radius=0.1, time_out=60)
+    move_to_abs(positions['grasp_bottle'][0], positions['grasp_bottle'][1], positions['grasp_bottle'][2], radius=0.1, time_out=3)
 
 
     # grasp
@@ -353,6 +348,15 @@ if __name__ == "__main__":
     ar_marker, target = "memorized_ar_marker/711", "Bottle"
     print("ターゲット："+target)
     trans,rot = ensure_detecting_ARmarker(ar_marker)
+
+    print("場所を修正します")
+    try:
+        omni_base.go_pose(geometry.pose(ei=3.14, ej=-1.57), 10.0, ref_frame_id='grasp_bottle_position')
+        print("場所を修正しました")
+    except:
+        pass
+
+    whole_body.move_to_neutral()
 
     height = trans[2]
     if height >=0.6:
@@ -375,14 +379,23 @@ if __name__ == "__main__":
     # --------------------商品を置きに行く(レジ前)--------------------
     whole_body.move_to_go()
     # move_to_abs(0.0, 0.0, 0.0, radius=0.1, time_out=30)
-    move_to_abs(positions['place_bottle'][0], positions['place_bottle'][1], positions['place_bottle'][2], radius=0.1, time_out=60)
+    move_to_abs(positions['place_bottle'][0], positions['place_bottle'][1], positions['place_bottle'][2], radius=0.1, time_out=3)
 
     
     # # place
     whole_body.move_to_neutral()
     rospy.sleep(10.0)
-    ar_marker = "memorized_ar_marker/711" # where to place (select teble)
+    ar_marker = "memorized_ar_marker/712" # where to place (select teble)
     trans,rot = ensure_detecting_ARmarker(ar_marker)
+
+    print("場所を修正します")
+    try:
+        omni_base.go_pose(geometry.pose(ei=3.14, ej=-1.57), 10.0, ref_frame_id='place_bottle_position')
+        print("場所を修正しました")
+    except:
+        pass
+    whole_body.move_to_neutral()
+
 
     height = trans[2]
     if height >=0.6:
@@ -404,9 +417,9 @@ if __name__ == "__main__":
     
     # -------------------------待機-------------------------
     whole_body.move_to_go()
-    move_to_abs(positions['initial'][0], positions['initial'][1], positions['initial'][2], radius=0.1, time_out=60)
+    move_to_abs(positions['initial'][0], positions['initial'][1], positions['initial'][2], radius=0.1, time_out=3)
     gripper.command(0.0)
-    rospy.sleep(10)
+    rospy.sleep(5)
     
     whole_body.move_to_joint_positions({'head_pan_joint': 0.2, 'head_tilt_joint': 0.3})
     playsound("/home/kubotalab-hsr/catkin_ws/src/wrs2020/scripts/WRS2020.mp3")

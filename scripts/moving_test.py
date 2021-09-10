@@ -31,36 +31,32 @@ def move_to_abs(x,y,z,radius, time_out):
     sub_positions = goal_position + [[radius,radius],[-radius,radius],[radius,-radius],[-radius,-radius]]
     i = 0
     while True:
-        print(i)
-        # omni_base.go_rel(0, 0, z, 15) # ゴール方向に体を向ける
         try:
-            print("f-move_to : moving")
+            print("f-move_to : moving to goal")
             omni_base.go_abs(x, y, z, time_out)
             print("f-move_to : succsess")
             whole_body.move_to_neutral()
             break
-        except hsrb_interface.exceptions.MobileBaseError: #  Failed to reach goal ()
+        except hsrb_interface.exceptions.MobileBaseError: #  Failed to reach goal (障害物やtime_outのとき)
             position_now = np.array(omni_base.pose[0:2])
             if np.linalg.norm(goal_position-position_now)<=radius: # ゴールから半径radius内にいれば移動成功とする
                 print("f-move_to : succsess in radius")
                 whole_body.move_to_neutral()
                 break
-            # -------------移動失敗のとき--------------
-            # radiusを半径とする円の外接四角形の四隅への移動を順番に試みる
+            
             try:
-                print("f-move_to : failed  moving to sub position and try again  -->  sub position No."+str(i))
-                omni_base.go_abs(sub_positions[i][0], sub_positions[i][1], z, 15.0)
-                print(i,i,i)
+                # 目標地点を少しずらす（目標地点からradiusを半径とする円の外接四角形の四隅への移動を順番に試みる）
+                # 目標点を動かして移動し直すことで、Failed to reach goal (障害物やtime_outのとき)でも、新たな軌道が生成され、動き直しが可能
+                # time_outを数秒程度に短くすることで素早く動き直しができる（常に軌道生成するので計算コスト高い）
+                print("f-move_to : moving to sub goal sub_No."+str(i+1))
+                omni_base.go_abs(sub_positions[i][0], sub_positions[i][1], z, time_out)
             except:
                 i += 1
                 if i==4:
                     i=0
-                print('-----------------')
-                print(i)
-                print('-----------------')
-                print("f-get_marker_position : 例外エラーの発生")
-                import traceback
-                traceback.print_exc()
+                # print("f-get_marker_position : 例外エラーの発生")
+                # import traceback
+                # traceback.print_exc()
 
 def get_marker_position(markerName):
     num_trial = 4
@@ -105,19 +101,22 @@ if __name__ == "__main__":
 
     # 初期位置
     whole_body.move_to_go()
-    move_to_abs(positions['initial'][0], positions['initial'][1], positions['initial'][2], radius=0.1, time_out=30)
+    print('initial')
+    move_to_abs(positions['initial'][0], positions['initial'][1], positions['initial'][2], radius=0.1, time_out=3)
     whole_body.move_to_neutral()
     rospy.sleep(3.0)
 
     # # --------------------ポスターを掴みに行く--------------------
     whole_body.move_to_go()
-    move_to_abs(positions['grasp_poster'][0], positions['grasp_poster'][1], positions['grasp_poster'][2], radius=0.1, time_out=60)
+    print('grasp poster')
+    move_to_abs(positions['grasp_poster'][0], positions['grasp_poster'][1], positions['grasp_poster'][2], radius=0.1, time_out=3)
     whole_body.move_to_neutral()
     rospy.sleep(3.0)
 
     # # --------------------ポスターを置きに行く--------------------
     whole_body.move_to_go()
-    move_to_abs(positions['place_poster'][0], positions['place_poster'][1], positions['place_poster'][2], radius=0.1, time_out=60)
+    print('place poster')
+    move_to_abs(positions['place_poster'][0], positions['place_poster'][1], positions['place_poster'][2], radius=0.1, time_out=3)
     whole_body.move_to_neutral()
     rospy.sleep(3.0)
 
@@ -125,14 +124,16 @@ if __name__ == "__main__":
 
     # # --------------------商品を掴みに行く--------------------
     whole_body.move_to_go()
-    move_to_abs(positions['grasp_bottle'][0], positions['grasp_bottle'][1], positions['grasp_bottle'][2], radius=0.1, time_out=60)
+    print('grasp ')
+    move_to_abs(positions['grasp_bottle'][0], positions['grasp_bottle'][1], positions['grasp_bottle'][2], radius=0.1, time_out=3)
     whole_body.move_to_neutral()
     rospy.sleep(3.0)
 
 
     # # --------------------商品を置きに行く--------------------
     whole_body.move_to_go()
-    move_to_abs(positions['place_bottle'][0], positions['place_bottle'][1], positions['place_bottle'][2], radius=0.1, time_out=60)
+    print('place ')
+    move_to_abs(positions['place_bottle'][0], positions['place_bottle'][1], positions['place_bottle'][2], radius=0.1, time_out=3)
     whole_body.move_to_neutral()
     rospy.sleep(3.0)
     
