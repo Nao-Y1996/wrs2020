@@ -164,7 +164,7 @@ class PickAndPlace():
             whole_body.move_to_go()
 
 
-def move_to_abs(x,y,z,radius, time_out):
+def move_to_abs(x,y,z,r=0.1, time_out=3):
     goal_position = np.array([x,y])
     while True:
         try:
@@ -173,10 +173,11 @@ def move_to_abs(x,y,z,radius, time_out):
             print("f-move_to : succsess")
             whole_body.move_to_neutral()
             break
-        except hsrb_interface.exceptions.MobileBaseError: #  Failed to reach goal (障害物やtime_outのとき)
+        except hsrb_interface.exceptions.MobileBaseError: #  Failed to reach goal (Because of obstacle or time_out)
             position_now = np.array(omni_base.pose[0:2])
-            if np.linalg.norm(goal_position-position_now)<=radius: # ゴールから半径radius内にいれば移動成功とする
-                print("f-move_to : succsess in radius")
+            # When the HSR is within a radius r of the goal, it is considered to have arrived at the goal.
+            if np.linalg.norm(goal_position-position_now)<=r: # ゴールから半径r内にいれば移動成功とする
+                print("f-move_to : succsess in radius r ")
                 whole_body.move_to_neutral()
                 break
             # -----------------------
